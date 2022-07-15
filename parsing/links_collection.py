@@ -4,9 +4,9 @@ from typing import List
 import time
 from bs4 import BeautifulSoup
 
-from links_collection_output_manager import FileLinksOutputManager
-from menu_page_link_manager import MenuPageLinkManager
-from requests_wrapper import RequestsWrupper
+from .links_collection_output_manager import FileLinksOutputManager
+from .menu_page_link_manager import MenuPageLinkManager
+from .requests_wrapper import RequestsWrapper
 
 
 class AbstractLinksScrapper(ABC):
@@ -62,7 +62,7 @@ class AbstractLinksScrapper(ABC):
         return self.output_manager.get_unknown_only(links)
 
 
-class PresidentScrapper(AbstractLinksScrapper):
+class KremlinScrapper(AbstractLinksScrapper):
     first_page_idx = 1
 
     def __init__(self,
@@ -81,7 +81,7 @@ class PresidentScrapper(AbstractLinksScrapper):
         self.chapter = chapter
         self.link_manager = MenuPageLinkManager(link_template,
                                                 first_page_idx=self.first_page_idx)
-        self.requests_wrapper = RequestsWrupper()
+        self.requests_wrapper = RequestsWrapper()
 
     def get_next_html(self):
         next_link = self.link_manager.get_next_page_link()
