@@ -2,6 +2,7 @@
 /data/temp
 # logs
 /logs
+/parsing_pipeline/ner/models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

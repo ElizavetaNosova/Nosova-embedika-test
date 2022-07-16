@@ -7,6 +7,7 @@ import time
 import random
 
 from parsing import KremlinArticleParser, KremlinScrapper
+from create_dataset import create_ner_dataset
 
 CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_DATA_DIRECTORY = os.path.abspath(os.path.join(CURRENT_FILE_DIR,"..", "data"))
@@ -57,8 +58,6 @@ class ParseKremlinArticleTask(luigi.Task):
 
     def __init__(self, data_directory_path, content_url):
         super().__init__(data_directory_path=data_directory_path, content_url=content_url)
-      #  self.data_directory_path = data_directory_path
-      #  self.content_url = content_url
         base_file_name = re.sub('/', '_',
             re.sub(re.escape('http://'), '', self.content_url)
         )
@@ -79,6 +78,20 @@ class ParseKremlinArticleTask(luigi.Task):
     def output(self):
         return luigi.LocalTarget(self.output_file_path)
 
+class CreateNerDataset(luigi.Task):
+    json_directory = luigi.Parameter()
+    output_path = luigi.Parameter()
+
+    def run(self):
+        df = create_ner_dataset(self.json_directory)
+        df.to_csv(self.output_path, index=False)
+
+    def output(self):
+        return luigi.LocalTarget(self.output_path)
+
+    def requires(self):
+        return [MakeDirectoryTask(os.path.dirname(self.output_path))]
+
 
 class ParsingTask(luigi.WrapperTask):
     data_path = luigi.Parameter(default=DEFAULT_DATA_DIRECTORY)
@@ -90,7 +103,9 @@ class ParsingTask(luigi.WrapperTask):
         yield CollectKremlinUrlsTask(link_collection_output_path)
         with open(link_collection_output_path) as f:
             urls = [i.strip() for i in f.readlines() if i.strip()]
-            yield [ParseKremlinArticleTask(content_url=url, data_directory_path=temp_data_path) for url in urls]
+        yield [ParseKremlinArticleTask(content_url=url, data_directory_path=temp_data_path) for url in urls]
+        ner_dataset_path = os.path.join(self.data_path, 'kremlin_ner_dataset.csv')
+        yield CreateNerDataset(json_directory=temp_data_path, output_path=ner_dataset_path)
 
 
 if __name__ == '__main__':
