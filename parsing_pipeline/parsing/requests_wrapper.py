@@ -14,9 +14,10 @@ class RequestsWrapper:
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
         ]
 
-    def get(self, link):
-        user_agent = random.choice(self.user_agents)
-        headers = {'User-Agent': user_agent}
+    def get(self, link, headers=None):
+        if not headers:
+            user_agent = random.choice(self.user_agents)
+            headers = {'User-Agent': user_agent}
         resp = requests.get(link, headers=headers)
         return resp
 

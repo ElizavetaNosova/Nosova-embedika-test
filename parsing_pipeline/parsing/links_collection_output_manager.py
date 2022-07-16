@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
+import os
 
 class AbstractLinksOutputManager(ABC):
     def __init__(self, output_path):
@@ -25,7 +26,10 @@ class FileLinksOutputManager(AbstractLinksOutputManager):
         # создаем папки (при не обходимости) и файл
         dirname = os.path.abspath(os.path.dirname(self.output_path))
         os.makedirs(dirname, exist_ok=True)
-        self.lines = set()
+        with open(self.output_path, 'a'):
+            pass
+        with open(self.output_path, 'r') as f:
+            self.lines = set([line.strip() for line in f.readlines()])
 
     def __len__(self):
         return len(self.lines)

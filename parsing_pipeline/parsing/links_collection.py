@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import math
 from typing import List
 import time
+import re
 from bs4 import BeautifulSoup
 
 from .links_collection_output_manager import FileLinksOutputManager
@@ -10,7 +11,7 @@ from .requests_wrapper import RequestsWrapper
 
 
 class AbstractLinksScrapper(ABC):
-    def __init__(self, output_path: str, start_link=None,
+    def __init__(self, output_path: str,
                  output_type='file',
                  retry_limit: int = 3,
                  write_limit: int = math.inf,
@@ -27,6 +28,11 @@ class AbstractLinksScrapper(ABC):
     def run(self):
         while not self.done and len(self.output_manager) < self.writing_limit:
             self.step()
+        self._stop()
+
+    @abstractmethod
+    def _stop(self):
+        raise NotImplementedError
 
     def step(self):
         html = self.get_next_html()
@@ -64,6 +70,7 @@ class AbstractLinksScrapper(ABC):
 
 class KremlinScrapper(AbstractLinksScrapper):
     first_page_idx = 1
+    main_url = 'http://kremlin.ru/'
 
     def __init__(self,
                  output_path: str,
@@ -71,7 +78,8 @@ class KremlinScrapper(AbstractLinksScrapper):
                  retry_limit: int = 3,
                  write_limit: int = math.inf,
                  sleeping_time=3,
-                 chapter='events/president/letters'):
+                 chapter='events/president/letters',
+                 suitable_link_pattern=re.compile('letters/\d+')):
         super().__init__(output_path=output_path,
                          output_type=output_type,
                          retry_limit=retry_limit,
@@ -82,27 +90,39 @@ class KremlinScrapper(AbstractLinksScrapper):
         self.link_manager = MenuPageLinkManager(link_template,
                                                 first_page_idx=self.first_page_idx)
         self.requests_wrapper = RequestsWrapper()
+        self.suitable_link_pattern = suitable_link_pattern
+
+    def _stop(self):
+        self.link_manager.stop()
 
     def get_next_html(self):
         next_link = self.link_manager.get_next_page_link()
         return self.requests_wrapper.get_html(next_link)
 
     def retry_get_next_html(self):
-        # toDo учитывать ситуацию, когда по ошибке запрашивают нулевую страницу вместо первой
+    #toDo учитывать ситуацию, когда по ошибке запрашивают нулевую страницу вместо первой
         current_link = self.link_manager.get_current_page_link()
         time.sleep(10)
         return self.requests_wrapper.get_html(current_link)
+
+    def _is_suitable(self, link_part):
+       link_part_is_ok = re.search(self.suitable_link_pattern, link_part) is not None
+       return link_part_is_ok
+
+    def _preprocess_link(self, link_part):
+        return self.main_url.rstrip('/') + link_part if link_part.startswith('/') else link_part
+
 
     def extract_links(self, html):
         soup = BeautifulSoup(html)
         href_children = soup.findAll(href=True)
         links = []
         for child in href_children:
-            link = child['href']
-            if self.chapter in link:
-                links.append(link)
+            link_part = child['href']
+            if self._is_suitable(link_part):
+                links.append(self._preprocess_link(link_part))
 
         return links
 
     def get_link_template(self, chapter: str):
-        return 'http://kremlin.ru/' + chapter.strip('/') + '/page/{}'
+        return self.main_url + chapter.strip('/') + '/page/{}'
