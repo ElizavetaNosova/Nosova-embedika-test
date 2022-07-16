@@ -3,6 +3,8 @@ import os
 import shutil
 import re
 import json
+import time
+import random
 
 from parsing import KremlinArticleParser, KremlinScrapper
 
@@ -68,6 +70,7 @@ class ParseKremlinArticleTask(luigi.Task):
         parsing_result = parser(self.content_url)
         with open(self.output_file_path, 'w') as f:
             json.dump(parsing_result, f, ensure_ascii=False)
+        time.sleep(random.randint(1,3))
 
 
     def requires(self):
