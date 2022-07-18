@@ -5,7 +5,7 @@ from ner import extract_entities
 
 def json_files_to_dataset(json_files_directory,
                           obligatory_keys=['text'],
-                          columns_order=['url', 'title', 'text']):
+                          columns_order=['url', 'tags', 'title', 'text']):
 
     data = []
     for filename in os.listdir(json_files_directory):

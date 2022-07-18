@@ -20,8 +20,13 @@ class ArticleParser:
         else:
             result['title'] = self._get_title(soup)
             result['text'] = self._get_text(soup)
+            extra_fields = self._get_extra_fields(soup)
+            result.update(extra_fields)
         finally:
             return result
+
+    def _get_extra_fields(self, soup:BeautifulSoup):
+        return {}
 
     def _get_title(self, soup: BeautifulSoup):
         title = soup.title.text
@@ -60,3 +65,7 @@ class KremlinArticleParser(ArticleParser):
         all_paragraphs = [p.text for p in soup.find(class_='read__internal_content').findAll('p')]
         rubbish_paragraphs = set([p.text for p in soup.find(class_='read__bottommeta').findAll('p')])
         return [p for p in all_paragraphs if p not in rubbish_paragraphs]
+
+    def _get_extra_fields(self, soup: BeautifulSoup):
+        tags = soup.find(class_='read__place').text
+        return {'tags':tags}
