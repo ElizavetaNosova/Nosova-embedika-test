@@ -11,11 +11,9 @@ from create_dataset import create_ner_dataset
 
 CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_DATA_DIRECTORY = os.path.abspath(os.path.join(CURRENT_FILE_DIR,"..", "data"))
-DEFAULT_TEMP_DATA_DIRECTORY = os.path.join(DEFAULT_DATA_DIRECTORY, 'temp')
-
 
 class MakeDirectoryTask(luigi.Task):
-    data_directory_path = luigi.Parameter(default=DEFAULT_TEMP_DATA_DIRECTORY)
+    data_directory_path = luigi.Parameter()
 
     def run(self):
         if not os.path.exists(self.data_directory_path):
@@ -27,7 +25,7 @@ class MakeDirectoryTask(luigi.Task):
 
 
 class CollectKremlinUrlsTask(luigi.Task):
-    output_file_path = luigi.Parameter(default=os.path.join(DEFAULT_TEMP_DATA_DIRECTORY, 'kremlin_urls.txt'))
+    output_file_path = luigi.Parameter()
 
     def run(self):
         filepath_without_extention, extention = os.path.splitext(self.output_file_path)
@@ -53,7 +51,7 @@ class CollectKremlinUrlsTask(luigi.Task):
 
 
 class ParseKremlinArticleTask(luigi.Task):
-    data_directory_path = luigi.Parameter(default=DEFAULT_TEMP_DATA_DIRECTORY)
+    data_directory_path = luigi.Parameter()
     content_url = luigi.Parameter()
 
     def __init__(self, data_directory_path, content_url):
@@ -78,6 +76,20 @@ class ParseKremlinArticleTask(luigi.Task):
     def output(self):
         return luigi.LocalTarget(self.output_file_path)
 
+
+class CollectDataTask(luigi.WrapperTask):
+    data_path = luigi.Parameter(default=DEFAULT_DATA_DIRECTORY)
+
+    def requires(self):
+        temp_data_path = os.path.join(self.data_path, 'temp')
+        link_collection_output_path = os.path.join(temp_data_path, 'kremlin_urls.txt')
+
+        yield CollectKremlinUrlsTask(link_collection_output_path)
+        with open(link_collection_output_path) as f:
+            urls = [i.strip() for i in f.readlines() if i.strip()]
+        yield [ParseKremlinArticleTask(content_url=url, data_directory_path=temp_data_path) for url in urls]
+
+
 class CreateNerDataset(luigi.Task):
     json_directory = luigi.Parameter()
     output_path = luigi.Parameter()
@@ -90,27 +102,11 @@ class CreateNerDataset(luigi.Task):
         return luigi.LocalTarget(self.output_path)
 
     def requires(self):
-        return [MakeDirectoryTask(os.path.dirname(self.output_path))]
+        return [MakeDirectoryTask(os.path.dirname(self.output_path)), CollectDataTask()]
 
-
-class ParsingTask(luigi.WrapperTask):
-    data_path = luigi.Parameter(default=DEFAULT_DATA_DIRECTORY)
-
-    def requires(self):
-        temp_data_path = os.path.join(self.data_path, 'temp')
-        link_collection_output_path = os.path.join(temp_data_path, 'kremlin_urls.txt')
-
-        yield CollectKremlinUrlsTask(link_collection_output_path)
-        with open(link_collection_output_path) as f:
-            urls = [i.strip() for i in f.readlines() if i.strip()]
-        yield [ParseKremlinArticleTask(content_url=url, data_directory_path=temp_data_path) for url in urls]
-        ner_dataset_path = os.path.join(self.data_path, 'kremlin_ner_dataset.csv')
-        yield CreateNerDataset(json_directory=temp_data_path, output_path=ner_dataset_path)
 
 
 if __name__ == '__main__':
     luigi.run()
-
-
 
 
