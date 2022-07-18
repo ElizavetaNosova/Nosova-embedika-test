@@ -4,8 +4,8 @@ import os
 from ner import extract_entities
 
 def json_files_to_dataset(json_files_directory,
-                          obligatory_keys=['text'],
-                          columns_order=['url', 'tags', 'title', 'text']):
+                          obligatory_keys,
+                          columns_order):
 
     data = []
     for filename in os.listdir(json_files_directory):
@@ -20,7 +20,7 @@ def json_files_to_dataset(json_files_directory,
 
 def create_ner_dataset(json_files_directory,
                     obligatory_keys=['text'],
-                    columns_order=['url', 'title', 'text'],
+                    columns_order=['url', 'tags', 'title', 'text'],
                     ner_columns=['title', 'text']):
     df = json_files_to_dataset(json_files_directory,  obligatory_keys, columns_order)
     for column_name in ner_columns:
