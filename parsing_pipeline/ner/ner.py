@@ -2,7 +2,6 @@ import os
 from navec import Navec
 from slovnet import NER
 from collections import defaultdict
-from typing import Dict, List
 
 
 current_file_dir = os.path.dirname(os.path.realpath(__file__))

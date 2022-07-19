@@ -2,6 +2,8 @@
 /data/temp
 # logs
 /logs
+# gpt weights
+*pytorch_model.bin
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
