@@ -22,7 +22,7 @@ def generate(person, organization)->Tuple[str, str]:
     max_score = max(version_scores)
     # если нужно было сгенерировать поздравление для персоны и модель с этим не справилась,
     # форсируем использование имени персоны в начале заголовка
-    if person and not max_score:
+    if person.strip() and not max_score:
         return generator.generate(person,
                                   organization,
                                   forse_person=True,
