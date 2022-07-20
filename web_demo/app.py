@@ -31,7 +31,3 @@ def update_output(n_clicks, person, organization):
     organization = organization if organization else ''
     title, text = generate(person, organization)
     return title, text
-
-
-def clean_output(n_clicks):
-    return '', ''
