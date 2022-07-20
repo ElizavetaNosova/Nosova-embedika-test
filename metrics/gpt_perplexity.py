@@ -18,7 +18,7 @@ class PerplexityScorer:
         self.max_length = max_length
 
     def _calc_text_loss(self, text:List[str]):
-        # ToDo Реализовать подсчет для батча (с поправкой на размер батча)
+        # ToDo Реализовать подсчет для батча (с поправкой на размер)
         encoding = self.tokenizer([text],
                                 return_tensors='pt',
                                 max_length=self.max_length,

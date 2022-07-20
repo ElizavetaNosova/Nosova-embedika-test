@@ -1,6 +1,7 @@
 from .tags import TITLE_TAG, TEXT_TAG, EOS_TAG
+from typing import Tuple
 
-def get_title_and_text(generated_text):
+def get_title_and_text(generated_text)->Tuple[str, str]:
     # так как при генерации тэг заголовка подставляется, он гарантированно присутствует
     _, content = generated_text.split(TITLE_TAG, maxsplit=1)
     if TEXT_TAG in content:

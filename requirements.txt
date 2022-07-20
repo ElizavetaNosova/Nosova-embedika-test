@@ -91,3 +91,4 @@ urllib3==1.25.11
 wcwidth==0.2.5
 webencodings==0.5.1
 zipp==3.8.1
+pymorphy2==0.9.1
