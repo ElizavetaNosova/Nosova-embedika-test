@@ -1,18 +1,19 @@
 from nltk.stem.snowball import SnowballStemmer
 from statistics import mean
 from typing import List, Set
+from functools import lru_cache
 
 from .utils import get_tokens_without_punctuation
 
 stemmer = SnowballStemmer('russian')
 
-
+@lru_cache(maxsize=32)
 def get_stem_set(text:str)->Set[str]:
     tokens = get_tokens_without_punctuation(text)
     stems = [stemmer.stem(token) for token in tokens]
     return set(stems)
 
-def entity_representation_proba(entities:List[str], text:str):
+def entity_representation_proba(entities:List[str], text:str) -> float:
     if not entities:
         return None
     entities_stem_sets = [get_stem_set(entity) for entity in entities]
