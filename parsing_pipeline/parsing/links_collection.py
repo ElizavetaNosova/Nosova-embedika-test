@@ -40,16 +40,16 @@ class AbstractLinksScrapper(ABC):
         links = self.extract_unknown_links(html)
         unknown_links = self.output_manager.get_unknown_only(links)
 
-        num_trials = 0
-        while not unknown_links and num_trials < self.retry_limit:
+        num_tries = 0
+        while not unknown_links and num_tries < self.retry_limit:
             time.sleep(self.sleeping_time)
             # пытаемся запросить тот же контент, что и при предыдущем запросе,
             # и сделать еще один шаг
-            if num_trials % 2 == 0:
+            if num_tries % 2 == 0:
                 html = self.retry_get_next_html()
             else:
                 html = self.get_next_html()
-            num_trials += 1
+            num_tries += 1
             unknown_links = self.extract_unknown_links(html)
 
         if unknown_links:
@@ -108,7 +108,6 @@ class KremlinScrapper(AbstractLinksScrapper):
         return self.requests_wrapper.get_html(next_link)
 
     def retry_get_next_html(self):
-    #toDo учитывать ситуацию, когда по ошибке запрашивают нулевую страницу вместо первой
         current_link = self.link_manager.get_current_page_link()
         return self.requests_wrapper.get_html(current_link)
 
