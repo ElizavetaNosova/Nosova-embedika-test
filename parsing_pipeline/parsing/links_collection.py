@@ -85,7 +85,8 @@ class KremlinScrapper(AbstractLinksScrapper):
                  write_limit: int = math.inf,
                  sleeping_time=3,
                  chapter='events/president/letters',
-                 suitable_link_pattern=re.compile('letters/\d+')):
+                 suitable_link_pattern=re.compile('letters/\d+'),
+                 log_dir=None):
         super().__init__(output_path=output_path,
                          output_type=output_type,
                          retry_limit=retry_limit,
@@ -94,6 +95,7 @@ class KremlinScrapper(AbstractLinksScrapper):
         link_template = self.get_link_template(chapter)
         self.chapter = chapter
         self.link_manager = MenuPageLinkManager(link_template,
+                                                log_dir=log_dir,
                                                 first_page_idx=self.first_page_idx)
         self.requests_wrapper = RequestsWrapper()
         self.suitable_link_pattern = suitable_link_pattern

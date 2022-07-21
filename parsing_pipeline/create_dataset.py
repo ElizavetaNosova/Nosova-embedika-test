@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 import os
-from ner import extract_entities
+from .ner import extract_entities
 
 def json_files_to_dataset(json_files_directory,
                           obligatory_keys,

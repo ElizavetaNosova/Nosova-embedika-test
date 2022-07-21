@@ -6,8 +6,8 @@ import json
 import time
 import random
 
-from parsing import KremlinArticleParser, KremlinScrapper
-from create_dataset import create_ner_dataset
+from .parsing import KremlinArticleParser, KremlinScrapper
+from .create_dataset import create_ner_dataset
 
 CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_DATA_DIRECTORY = os.path.abspath(os.path.join(CURRENT_FILE_DIR,"..", "data"))
@@ -31,7 +31,8 @@ class CollectKremlinUrlsTask(luigi.Task):
         filepath_without_extention, extention = os.path.splitext(self.output_file_path)
         temp_output_filepath = filepath_without_extention+'_temp'+extention
         try:
-            scraper = KremlinScrapper(output_path=temp_output_filepath)
+            scraper = KremlinScrapper(output_path=temp_output_filepath,
+                                      log_dir=os.path.dirname(self.output_file_path))
             scraper.run()
         # ошибка может возникнуть уже при инициализации,
         # если при предыдущем запуске итерация завершилась,
@@ -112,7 +113,5 @@ class CreateNerDataset(luigi.Task):
                 CollectDataTask(os.path.join(self.data_directory, self.temp_child_directory))]
 
 
-if __name__ == '__main__':
-    luigi.run()
 
 
