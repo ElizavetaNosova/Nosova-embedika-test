@@ -1,2 +1,2 @@
-from .links_collection import KremlinScrapper
 from .article_parser import KremlinArticleParser
+from .collect_links import KremlinScrapper

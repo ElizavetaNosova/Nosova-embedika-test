@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from .links_collection_output_manager import FileLinksOutputManager
 from .menu_page_link_manager import MenuPageLinkManager
-from .requests_wrapper import RequestsWrapper
+from parsing_pipeline.parsing.requests_wrapper import RequestsWrapper
 
 
 class AbstractLinksScrapper(ABC):
