@@ -1,3 +1,3 @@
 #! /bin/sh.
 luigid --background --logdir ./logs
-python3 parsing_pipeline/luigi_tasks.py ParsingTask
+python3 -m parsing_pipeline CreateNerDataset && rm -r data/temp
