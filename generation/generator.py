@@ -10,8 +10,8 @@ from copy import copy
 
 
 class KremlinGenerator():
-    def __init__(self):
-        self.gpt = load_kremlin_gpt().eval()
+    def __init__(self, device=None):
+        self.gpt = load_kremlin_gpt(device).eval()
         self.tokenizer = init_kremlin_tokenizer()
         self._generation_parameters = get_generation_parameters(self.tokenizer)
 

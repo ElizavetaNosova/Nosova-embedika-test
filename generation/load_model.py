@@ -7,6 +7,7 @@ GPT_DIRECTORY = os.path.join(os.path.dirname(current_file_dir),
                              'models',
                              'kremlin_gpt')
 
-def load_kremlin_gpt():
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+def load_kremlin_gpt(device=None):
+    if not device:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
     return GPT2LMHeadModel.from_pretrained(GPT_DIRECTORY).to(device)
