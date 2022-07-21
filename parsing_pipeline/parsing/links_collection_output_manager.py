@@ -26,8 +26,9 @@ class FileLinksOutputManager(AbstractLinksOutputManager):
         # создаем папки (при не обходимости) и файл
         dirname = os.path.abspath(os.path.dirname(self.output_path))
         os.makedirs(dirname, exist_ok=True)
-        with open(self.output_path, 'a'):
-            pass
+        if not os.path.exists(self.output_path):
+            with open(self.output_path, 'w'):
+                pass
         with open(self.output_path, 'r') as f:
             self.lines = set([line.strip() for line in f.readlines()])
 

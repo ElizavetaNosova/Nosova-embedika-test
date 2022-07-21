@@ -33,14 +33,15 @@ class CollectKremlinUrlsTask(luigi.Task):
         try:
             scraper = KremlinScrapper(output_path=temp_output_filepath)
             scraper.run()
-        # если предыдущий запуск собрал все ссылки, но процесс упал раньше перемещения файла
+        # ошибка может возникнуть уже при инициализации,
+        # если при предыдущем запуске итерация завершилась,
+        # а копирование файла - нет
         except StopIteration:
             pass
 
-        try:
-            shutil.copy(temp_output_filepath, self.output_file_path)
-        except shutil.SameFileError:
-            pass
+        # ошибка SameFileError исключена, так как при наличии выходного файла задание не запустится
+        shutil.copy(temp_output_filepath, self.output_file_path)
+
 
     def output(self):
         return luigi.LocalTarget(self.output_file_path)
@@ -55,12 +56,12 @@ class ParseKremlinArticleTask(luigi.Task):
     content_url = luigi.Parameter()
 
     def __init__(self, data_directory_path, content_url):
-        super().__init__(data_directory_path=data_directory_path, content_url=content_url)
+        super().__init__(data_directory_path=data_directory_path,
+                         content_url=content_url)
         base_file_name = re.sub('/', '_',
             re.sub(re.escape('http://'), '', self.content_url)
         )
         self.output_file_path = os.path.join(self.data_directory_path, base_file_name+'.json')
-
 
     def run(self):
         parser = KremlinArticleParser()
@@ -69,7 +70,6 @@ class ParseKremlinArticleTask(luigi.Task):
             json.dump(parsing_result, f, ensure_ascii=False)
         time.sleep(random.randint(1,3))
 
-
     def requires(self):
         return [MakeDirectoryTask(self.data_directory_path)]
 
@@ -77,33 +77,39 @@ class ParseKremlinArticleTask(luigi.Task):
         return luigi.LocalTarget(self.output_file_path)
 
 
-class CollectDataTask(luigi.WrapperTask):
-    data_path = luigi.Parameter(default=DEFAULT_DATA_DIRECTORY)
+class CollectDataTask(luigi.Task):
+    temp_data_path = luigi.Parameter()
+
+    def __init__(self, temp_data_path):
+        super().__init__(temp_data_path=temp_data_path)
+        self.link_collection_output_path = os.path.join(self.temp_data_path, 'kremlin_urls.txt')
+
+    def run(self):
+        with open(self.link_collection_output_path) as f:
+            urls = [i.strip() for i in f.readlines() if i.strip()]
+        yield [ParseKremlinArticleTask(content_url=url,
+                                   data_directory_path=self.temp_data_path) for url in urls]
 
     def requires(self):
-        temp_data_path = os.path.join(self.data_path, 'temp')
-        link_collection_output_path = os.path.join(temp_data_path, 'kremlin_urls.txt')
-
-        yield CollectKremlinUrlsTask(link_collection_output_path)
-        with open(link_collection_output_path) as f:
-            urls = [i.strip() for i in f.readlines() if i.strip()]
-        yield [ParseKremlinArticleTask(content_url=url, data_directory_path=temp_data_path) for url in urls]
+        return CollectKremlinUrlsTask(output_file_path=self.link_collection_output_path)
 
 
 class CreateNerDataset(luigi.Task):
-    json_directory = luigi.Parameter()
-    output_path = luigi.Parameter()
+    data_directory = luigi.Parameter(default=DEFAULT_DATA_DIRECTORY)
+    output_filename = 'kremlin_ner_dataset.csv'
+    temp_child_directory = 'temp'
 
     def run(self):
-        df = create_ner_dataset(self.json_directory)
+        df = create_ner_dataset(os.path.join(self.data_directory, self.output_filename))
         df.to_csv(self.output_path, index=False)
 
     def output(self):
-        return luigi.LocalTarget(self.output_path)
+        return luigi.LocalTarget(os.path.join(self.data_directory, self.output_filename))
 
     def requires(self):
-        return [MakeDirectoryTask(os.path.dirname(self.output_path)), CollectDataTask()]
-
+        return [MakeDirectoryTask(self.data_directory),
+                MakeDirectoryTask(os.path.join(self.data_directory, self.temp_child_directory)),
+                CollectDataTask(os.path.join(self.data_directory, self.temp_child_directory))]
 
 
 if __name__ == '__main__':
