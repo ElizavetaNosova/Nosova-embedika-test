@@ -6,13 +6,16 @@ app = Dash(__name__)
 
 PERSON_PLACEHOLDER = 'Персона'
 ORGANIZATION_PLACEHOLDER = 'Организация'
+BUTTON_TEXT = 'Сгенерировать'
+INSTRUCTION_TEXT = f'Укажите персону (рекомендуем указывать не только фамилию, но и имя или инициалы) или организацию и нажмите на кнопку "{BUTTON_TEXT}"'
+
 
 app.layout = html.Div([
     html.Div(dcc.Input(id='person', type='text', placeholder=PERSON_PLACEHOLDER)),
     html.Div(dcc.Input(id='organization', type='text', placeholder=ORGANIZATION_PLACEHOLDER)),
     html.Button('Сгенерировать', id='submit-val', n_clicks=0),
     html.Div(id='container-button-basic',
-             children='Укажите персону (рекомендуем указывать не только фамилию, но и имя или инициалы) или организацию и нажмите на кнопку "Сгенерировать"'),
+             children=INSTRUCTION_TEXT),
     html.Div(id="title", style={"font-weight": "bold"}),
     html.Div(id="text"),
 ])
