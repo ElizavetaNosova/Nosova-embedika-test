@@ -5,15 +5,17 @@ from functools import lru_cache
 
 from .utils import get_tokens_without_punctuation
 
-stemmer = SnowballStemmer('russian')
+stemmer = SnowballStemmer("russian")
+
 
 @lru_cache(maxsize=32)
-def get_stem_set(text:str)->Set[str]:
+def get_stem_set(text: str) -> Set[str]:
     tokens = get_tokens_without_punctuation(text)
     stems = [stemmer.stem(token) for token in tokens]
     return set(stems)
 
-def entity_representation_proba(entities:List[str], text:str) -> float:
+
+def entity_representation_proba(entities: List[str], text: str) -> float:
     if not entities:
         return None
     entities_stem_sets = [get_stem_set(entity) for entity in entities]
@@ -27,9 +29,16 @@ def entity_representation_proba(entities:List[str], text:str) -> float:
             are_presented.append(is_presented)
     return mean(are_presented)
 
-def corpus_entity_representation_proba(entities_groups:List[List[str]],
-                                       texts:List[str]):
+
+def corpus_entity_representation_proba(
+    entities_groups: List[List[str]], texts: List[str]
+):
     if len(entities_groups) != len(texts):
         raise ValueError()
-    return mean([entity_representation_proba(entities, text) \
-                 for entities, text in zip(entities_groups, texts) if entities])
+    return mean(
+        [
+            entity_representation_proba(entities, text)
+            for entities, text in zip(entities_groups, texts)
+            if entities
+        ]
+    )

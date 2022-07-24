@@ -11,16 +11,18 @@ from parsing_pipeline.parsing.requests_wrapper import RequestsWrapper
 
 
 class AbstractLinksScrapper(ABC):
-    def __init__(self, output_path: str,
-                 output_type='file',
-                 retry_limit: int = 3,
-                 write_limit: int = math.inf,
-                 sleeping_time=3,
-                 known_links=set(),
-                 update_mode=False):
-        if output_type == 'file':
-            self.output_manager = FileLinksOutputManager(output_path,
-                                                         known_links)
+    def __init__(
+        self,
+        output_path: str,
+        output_type="file",
+        retry_limit: int = 3,
+        write_limit: int = math.inf,
+        sleeping_time=3,
+        known_links=set(),
+        update_mode=False,
+    ):
+        if output_type == "file":
+            self.output_manager = FileLinksOutputManager(output_path, known_links)
         else:
             raise NotImplementedError()
         self.writing_limit = write_limit
@@ -73,7 +75,6 @@ class AbstractLinksScrapper(ABC):
     def get_start_html(self) -> str:
         raise NotImplementedError
 
-
     def get_unknown_start_page_links(self) -> List[str]:
         start_page_html = self.get_start_html()
         return self.extract_unknown_links(start_page_html)
@@ -89,32 +90,38 @@ class AbstractLinksScrapper(ABC):
 
 class KremlinScrapper(AbstractLinksScrapper):
     first_page_idx = 1
-    main_url = 'http://kremlin.ru/'
+    main_url = "http://kremlin.ru/"
 
-    def __init__(self,
-                 output_path: str,
-                 output_type='file',
-                 retry_limit: int = 3,
-                 write_limit: int = math.inf,
-                 sleeping_time=3,
-                 update_mode = False,
-                 known_links = set(),
-                 chapter='events/president/letters',
-                 suitable_link_pattern=re.compile('letters/\d+'),
-                 scrapping_log_file_path=None):
-        super().__init__(output_path=output_path,
-                         output_type=output_type,
-                         retry_limit=retry_limit,
-                         write_limit=write_limit,
-                         sleeping_time=sleeping_time,
-                         update_mode=update_mode,
-                         known_links=known_links)
+    def __init__(
+        self,
+        output_path: str,
+        output_type="file",
+        retry_limit: int = 3,
+        write_limit: int = math.inf,
+        sleeping_time=3,
+        update_mode=False,
+        known_links=set(),
+        chapter="events/president/letters",
+        suitable_link_pattern=re.compile("letters/\d+"),
+        scrapping_log_file_path=None,
+    ):
+        super().__init__(
+            output_path=output_path,
+            output_type=output_type,
+            retry_limit=retry_limit,
+            write_limit=write_limit,
+            sleeping_time=sleeping_time,
+            update_mode=update_mode,
+            known_links=known_links,
+        )
         link_template = self.get_link_template(chapter)
         self.chapter = chapter
-        self.link_manager = MenuPageLinkManager(link_template,
-                                                log_file_path=scrapping_log_file_path,
-                                                first_page_idx=self.first_page_idx,
-                                                restart=update_mode)
+        self.link_manager = MenuPageLinkManager(
+            link_template,
+            log_file_path=scrapping_log_file_path,
+            first_page_idx=self.first_page_idx,
+            restart=update_mode,
+        )
         self.requests_wrapper = RequestsWrapper()
         self.suitable_link_pattern = suitable_link_pattern
 
@@ -134,23 +141,26 @@ class KremlinScrapper(AbstractLinksScrapper):
         return self.requests_wrapper.get_html(current_link)
 
     def _is_suitable(self, link_part):
-       link_part_is_ok = re.search(self.suitable_link_pattern, link_part) is not None
-       return link_part_is_ok
+        link_part_is_ok = re.search(self.suitable_link_pattern, link_part) is not None
+        return link_part_is_ok
 
     def _preprocess_link(self, link_part):
-        return self.main_url.rstrip('/') + link_part if link_part.startswith('/') else link_part
-
+        return (
+            self.main_url.rstrip("/") + link_part
+            if link_part.startswith("/")
+            else link_part
+        )
 
     def extract_links(self, html):
         soup = BeautifulSoup(html)
         href_children = soup.findAll(href=True)
         links = []
         for child in href_children:
-            link_part = child['href']
+            link_part = child["href"]
             if self._is_suitable(link_part):
                 links.append(self._preprocess_link(link_part))
 
         return links
 
     def get_link_template(self, chapter: str):
-        return self.main_url + chapter.strip('/') + '/page/{}'
+        return self.main_url + chapter.strip("/") + "/page/{}"
