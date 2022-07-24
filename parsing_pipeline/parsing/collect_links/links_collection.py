@@ -15,14 +15,18 @@ class AbstractLinksScrapper(ABC):
                  output_type='file',
                  retry_limit: int = 3,
                  write_limit: int = math.inf,
-                 sleeping_time=3):
+                 sleeping_time=3,
+                 known_links=set(),
+                 update_mode=False):
         if output_type == 'file':
-            self.output_manager = FileLinksOutputManager(output_path)
+            self.output_manager = FileLinksOutputManager(output_path,
+                                                         known_links)
         else:
             raise NotImplementedError()
         self.writing_limit = write_limit
         self.retry_limit = retry_limit
         self.sleeping_time = sleeping_time
+        self.log_page_idx = not update_mode
         self._prev_page_failed = False
         self.done = False
 
@@ -66,6 +70,15 @@ class AbstractLinksScrapper(ABC):
         return self.get_next_html()
 
     @abstractmethod
+    def get_start_html(self) -> str:
+        raise NotImplementedError
+
+
+    def get_unknown_start_page_links(self) -> List[str]:
+        start_page_html = self.get_start_html()
+        return self.extract_unknown_links(start_page_html)
+
+    @abstractmethod
     def extract_links(self, html: str) -> List[str]:
         raise NotImplementedError()
 
@@ -84,19 +97,24 @@ class KremlinScrapper(AbstractLinksScrapper):
                  retry_limit: int = 3,
                  write_limit: int = math.inf,
                  sleeping_time=3,
+                 update_mode = False,
+                 known_links = set(),
                  chapter='events/president/letters',
                  suitable_link_pattern=re.compile('letters/\d+'),
-                 log_dir=None):
+                 scrapping_log_file_path=None):
         super().__init__(output_path=output_path,
                          output_type=output_type,
                          retry_limit=retry_limit,
                          write_limit=write_limit,
-                         sleeping_time=sleeping_time)
+                         sleeping_time=sleeping_time,
+                         update_mode=update_mode,
+                         known_links=known_links)
         link_template = self.get_link_template(chapter)
         self.chapter = chapter
         self.link_manager = MenuPageLinkManager(link_template,
-                                                log_dir=log_dir,
-                                                first_page_idx=self.first_page_idx)
+                                                log_file_path=scrapping_log_file_path,
+                                                first_page_idx=self.first_page_idx,
+                                                restart=update_mode)
         self.requests_wrapper = RequestsWrapper()
         self.suitable_link_pattern = suitable_link_pattern
 
@@ -106,6 +124,10 @@ class KremlinScrapper(AbstractLinksScrapper):
     def get_next_html(self):
         next_link = self.link_manager.get_next_page_link()
         return self.requests_wrapper.get_html(next_link)
+
+    def get_start_html(self):
+        start_link = self.link_manager.get_next_page_link()
+        return self.requests_wrapper.get_html(start_link)
 
     def retry_get_next_html(self):
         current_link = self.link_manager.get_current_page_link()

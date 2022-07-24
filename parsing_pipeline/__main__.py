@@ -1,5 +1,5 @@
 import luigi
-from .luigi_tasks import CreateNerDataset
+from .luigi_tasks import CreateOrUpdateNerDatasetTask
 
 
 if __name__ == '__main__':

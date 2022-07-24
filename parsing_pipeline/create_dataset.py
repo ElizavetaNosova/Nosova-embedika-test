@@ -19,10 +19,10 @@ def json_files_to_dataset(json_files_directory,
 
 
 def create_ner_dataset(json_files_directory,
-                    obligatory_keys=['text'],
-                    columns_order=['url', 'tags', 'title', 'text'],
+                    columns_order=['url', 'tags', 'title', 'text', 'success'],
                     ner_columns=['title', 'text']):
-    df = json_files_to_dataset(json_files_directory,  obligatory_keys, columns_order)
+    # обязательных значений нет, чтобы недоступные страницы записывались в датасет как посещенные
+    df = json_files_to_dataset(json_files_directory,  obligatory_keys=[], columns_order=columns_order)
     for column_name in ner_columns:
         df[column_name+'_ner'] = df[column_name].apply(
             lambda x: json.dumps(extract_entities(x), ensure_ascii=False)

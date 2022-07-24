@@ -2,16 +2,21 @@ from bs4 import BeautifulSoup
 import ftfy
 import re
 from requests import HTTPError
+from copy import copy
 
 from .requests_wrapper import RequestsWrapper
 
 
 class ArticleParser:
+    # Значение можно заменять только при наследовании
+    _url_field_name: str = 'url'
+
     def __init__(self):
         self.requests = RequestsWrapper(fake_success=False)
 
+
     def __call__(self, url):
-        result = {'url': url}
+        result = {self._url_field_name: url}
         try:
             soup = self._get_soup(url)
             result['success'] = True
@@ -24,6 +29,10 @@ class ArticleParser:
             result.update(extra_fields)
         finally:
             return result
+
+    @classmethod
+    def get_url_field_name(cls):
+        return copy(cls._url_field_name)
 
     def _get_extra_fields(self, soup:BeautifulSoup):
         return {}
@@ -53,6 +62,10 @@ class ArticleParser:
     def _get_soup(self, url):
         html = self.requests.get_html(url)
         return BeautifulSoup(html)
+
+    @property
+    def url_field_name(self):
+        return self._url_field_name
 
 
 class KremlinArticleParser(ArticleParser):
